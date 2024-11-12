@@ -1,0 +1,543 @@
+// Code adapted from www.learnopengl.com, www.glfw.org 
+
+#include <iostream> 
+#define GLEW_STATIC 
+#include <GL/glew.h> 
+#include <GLFW/glfw3.h> 
+
+// GLM Mathematics 
+
+#include <glm/glm.hpp> 
+#include <glm/gtc/matrix_transform.hpp> 
+#include <glm/gtc/type_ptr.hpp> 
+#include <glm/gtx/matrix_interpolation.hpp> 
+
+#include "shader.h" 
+
+
+int main(void)
+{
+
+    //++++create a glfw window+++++++++++++++++++++++++++++++++++++++ 
+    GLFWwindow* window;
+
+    if (!glfwInit()) //Initialize the library 
+        return -1;
+
+    window = glfwCreateWindow(640, 640, "OpenGL Window", NULL, NULL);
+    if (!window)
+    {
+        glfwTerminate();
+        return -1;
+    }
+
+
+    glfwMakeContextCurrent(window);//Make the window's context current 
+
+
+    //++++Initialize GLEW to setup the OpenGL Function pointers+++++++ 
+    glewExperimental = GL_TRUE;
+    glewInit();
+
+
+    //++++Define the viewport dimensions++++++++++++++++++++++++++++ 
+    glViewport(0, 0, 640, 640);
+
+
+    //++++++++++Set up vertex data (and buffer(s)) and attribute pointers+++++++++ 
+
+    GLfloat firstTriangle[] = {
+    0.0f,  0.0f, 0.0f, 1.0f, 0.6f, 0.0f,  // Top 
+    0.4f, 0.4f, 0.0f, 1.0f, 0.6f, 0.0f,  // Bottom Left 
+   -0.4f, 0.4f, 0.0f, 1.0f, 0.6f, 0.0f,   // Bottom Right  
+    };
+
+    GLfloat secondTriangle[] = {
+    0.0f, 0.0f, 0.0f,0.0f, 1.0f, 1.0f,  // Top 
+   -0.4f, 0.4f, 0.0f, 0.0f, 1.0f, 1.0f,  // Bottom Left 
+   -0.4f, -0.4f, 0.0f, 0.0f, 1.0f, 1.0f,   // Bottom Right 
+    };
+
+    GLfloat thirdTriangle[] = {
+    0.2f,  0.2f, 0.0f, 1.0f, 1.0f, 0.0f,  // Top 
+    0.4f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,  // Bottom Left 
+    0.4f, 0.4f, 0.0f, 1.0f, 1.0f, 0.0f,   // Bottom Right 
+    };
+
+    GLfloat fourthTriangle[] = {
+    0.4f, -0.4f, 0.0f, 0.2f, 1.0f, 0.0f,  // Top 
+    0.4f, 0.0f, 0.0f, 0.2f, 1.0f, 0.0f,  // Bottom Left 
+    0.0f, -0.4f, 0.0f, 0.2f, 1.0f, 0.0f,   // Bottom Right 
+    };
+
+    GLfloat lastTriangle[] = {
+    0.0f, 0.0f, 0.0f, 0.7f, -0.4f, 0.0f,  // Top 
+   -0.2f, -0.2f, 0.0f, 0.7f, -0.4f, 0.0f,  // Bottom Left 
+    0.2f, -0.2f, 0.0f, 0.7f, -0.4f, 0.0f,   // Bottom Right 
+    };
+
+    GLfloat firstRectangle[] = {
+    0.2f,  0.2f, 0.0f, 0.1f, 0.0f, 1.0f,  // Top Right 
+    0.4f, 0.0f, 0.0f, 0.1f, 0.0f, 1.0f,  // Bottom Right 
+    0.2f, -0.2f, 0.0f, 0.1f, 0.0f, 1.0f,  // Bottom Left 
+    0.0f,  00.0f, 0.0f, 0.1f, 0.0f, 1.0f,   // Top Left 
+    };
+
+    GLfloat secondRectangle[] = {
+    0.2f,  -0.2f, 0.0f, 0.6f, 0.0f, 1.0f,  // Top Right 
+    0.0f, -0.4f, 0.0f, 0.6f, 0.0f, 1.0f,  // Bottom Right 
+   -0.4f, -0.4f, 0.0f, 0.6f, 0.0f, 1.0f,  // Bottom Left 
+   -0.2f,  -0.2f, 0.0f, 0.6f, 0.0f, 1.0f,   // Top Left 
+    };
+
+
+
+    GLuint VBOs[8], VAOs[8];
+    glGenVertexArrays(8, VAOs); // the address-of operator (&) is not needed here, as the array name is a pointer type 
+    glGenBuffers(8, VBOs);
+
+    // ================================ 
+
+    // First Triangle setup 
+
+    // =============================== 
+
+    glBindVertexArray(VAOs[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(firstTriangle), firstTriangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);	// Vertex attributes stay the same, note that the stride is 6*sizeof(GLloat)			 
+    glEnableVertexAttribArray(0);  // set attribute index of the position attribute to 0 in the vertex shader 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Color attribute 
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    // ================================ 
+
+    // Second Triangle setup 
+
+    // =============================== 
+
+    glBindVertexArray(VAOs[1]);	// Note that we bind to a different VAO now 
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);	// And a different VBO 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(secondTriangle), secondTriangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);	// Vertex attributes stay the same	 
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Color attribute 
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    // ================================ 
+
+    // Third Triangle setup 
+
+    // =============================== 
+
+    glBindVertexArray(VAOs[2]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[2]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(thirdTriangle), thirdTriangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);	// Vertex attributes stay the same, note that the stride is 6*sizeof(GLloat)			 
+    glEnableVertexAttribArray(0);  // set attribute index of the position attribute to 0 in the vertex shader 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Color attribute 
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    // ================================ 
+
+    // Fourth Triangle setup 
+
+    // =============================== 
+
+    glBindVertexArray(VAOs[3]);	// Note that we bind to a different VAO now 
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[3]);	// And a different VBO 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(fourthTriangle), fourthTriangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);	// Vertex attributes stay the same	 
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Color attribute 
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    // ================================ 
+
+    // Last Triangle setup 
+
+    // =============================== 
+
+    glBindVertexArray(VAOs[4]);	// Note that we bind to a different VAO now 
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[4]);	// And a different VBO 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(lastTriangle), lastTriangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);	// Vertex attributes stay the same	 
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Color attribute 
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    // ================================ 
+
+    // First Rectangle setup 
+
+    // =============================== 
+
+    glBindVertexArray(VAOs[5]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[5]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(firstRectangle), firstRectangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);	// Vertex attributes stay the same, note that the stride is 6*sizeof(GLloat)			 
+    glEnableVertexAttribArray(0);  // set attribute index of the position attribute to 0 in the vertex shader 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Color attribute 
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    // ================================ 
+
+    // Second Rectangle setup 
+
+    // =============================== 
+
+    glBindVertexArray(VAOs[6]);	// Note that we bind to a different VAO now 
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[6]);	// And a different VBO 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(secondRectangle), secondRectangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);	// Vertex attributes stay the same	 
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))); // Color attribute 
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    //++++++++++Build and compile shader program+++++++++++++++++++++ 
+    GLuint shaderProgram = initShader("vert.glsl", "frag.glsl");
+
+    //++++++++++++++++++++++++++++++++++++++++++++++ 
+
+    /* Loop until the user closes the window */
+
+    while (!glfwWindowShouldClose(window))
+    {
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(shaderProgram);
+        GLint transformLoc;
+
+
+
+
+
+
+
+        //FIRST TRIANGLE
+
+        glm::mat4 transform;
+        transformLoc = glGetUniformLocation(shaderProgram, "transform");
+        float startTime = (float)glfwGetTime();
+
+        //Move U or D
+        if (startTime <= 2.0f) {
+            transform = glm::mat4();
+        }
+        else {
+            float moveUD = glm::min((startTime - 2.0f) * 0.1f, 0.2f);
+            transform = glm::translate(transform, glm::vec3(0.0f, -moveUD, 0.0f));
+        }
+
+        //Move L or R
+        if (startTime <= 2.0f) {
+            transform = glm::mat4();
+        }
+        else {
+            float moveLR = glm::min((startTime - 2.0f) * 0.1f, 0.5f);
+            transform = glm::translate(transform, glm::vec3(-moveLR, 0.0f, 0.0f));
+        }
+
+        //Rotate
+        if (startTime <= 2.0f) {
+            transform = glm::mat4();
+        }
+        else {
+            float spinSpeed = 0.8f;
+            float angeldimaria = glm::radians(315.0f);
+            float angeldimaria2 = glm::min((startTime - 2.0f) * spinSpeed, angeldimaria);
+            transform = glm::rotate(transform, angeldimaria2, glm::vec3(0.0f, 0.0f, 1.0f));
+        }
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+        glBindVertexArray(VAOs[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
+
+
+
+
+
+
+
+
+        //SECOND TRIANGLE 
+
+        glm::mat4 transform1;
+        float startTime1 = (float)glfwGetTime();
+
+        //Move U or D
+        if (startTime1 <= 2.0f) {
+            transform1 = glm::mat4();
+        }
+        else {
+            float moveUD = glm::min((startTime1 - 2.0f) * 0.1f, 0.1f);
+            transform1 = glm::translate(transform1, glm::vec3(0.0f, moveUD, 0.0f));
+        }
+
+        //Move L or R
+        if (startTime1 <= 2.0f) {
+            transform1 = glm::mat4();
+        }
+        else {
+            float moveLR = glm::min((startTime1 - 2.0f) * 0.1f, 0.334f);
+            transform1 = glm::translate(transform1, glm::vec3(moveLR, 0.0f, 0.0f));
+        }
+
+        //Rotate
+        if (startTime1 <= 2.0f) {
+            transform1 = glm::mat4();
+        }
+        else {
+            float spinSpeed = 0.5f;
+            float angeldimaria = glm::radians(45.0f);
+            float angeldimaria2 = glm::min((startTime1 - 2.0f) * spinSpeed, angeldimaria);
+            transform1 = glm::rotate(transform1, angeldimaria2, glm::vec3(0.0f, 0.0f, 1.0f));
+        }
+
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform1));
+        glBindVertexArray(VAOs[1]);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
+
+
+
+
+
+
+
+
+        //THIRD TRIANGLE
+
+        glm::mat4 transform2;
+        float startTime2 = (float)glfwGetTime();
+
+        //Move U or D
+        if (startTime2 <= 2.0f) {
+            transform2 = glm::mat4();
+        }
+        else {
+            float moveUD = glm::min((startTime2 - 2.0f) * 0.1f, 0.2f);
+            transform2 = glm::translate(transform2, glm::vec3(0.0f, -moveUD, 0.0f));
+        }
+
+        //Move L or R
+        if (startTime2 <= 2.0f) {
+            transform2 = glm::mat4();
+        }
+        else {
+            float moveLR = glm::min((startTime2 - 2.0f) * 0.1f, 0.7f);
+            transform2 = glm::translate(transform2, glm::vec3(-moveLR, 0.0f, 0.0f));
+        }
+
+        //Rotate
+        if (startTime2 <= 2.0f) {
+            transform2 = glm::mat4();
+        }
+        else {
+            float spinSpeed = 0.7f;
+            float angeldimaria = glm::radians(315.0f);
+            float angeldimaria2 = glm::min((startTime2 - 2.0f) * spinSpeed, angeldimaria);
+            transform2 = glm::rotate(transform2, angeldimaria2, glm::vec3(0.0f, 0.0f, 1.0f));
+        }
+
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform2));
+        glBindVertexArray(VAOs[2]);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
+
+
+
+
+
+
+
+        //FOURTH TRIANGLE
+
+        glm::mat4 transform3;
+        float startTime3 = (float)glfwGetTime();
+
+        //Move U or D
+        if (startTime3 <= 2.0f) {
+            transform3 = glm::mat4();
+        }
+        else {
+            float moveUD = glm::min((startTime3 - 2.0f) * 0.1f, 0.5f);
+            transform3 = glm::translate(transform3, glm::vec3(0.0f, moveUD, 0.0f));
+        }
+
+        //Move L or R
+        if (startTime3 <= 2.0f) {
+            transform3 = glm::mat4();
+        }
+        else {
+            float moveLR = glm::min((startTime3 - 2.0f) * 0.1f, 0.17f);
+            transform3 = glm::translate(transform3, glm::vec3(-moveLR, 0.0f, 0.0f));
+        }
+
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform3));
+        glBindVertexArray(VAOs[3]);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
+
+
+
+
+
+
+
+        //LAST TRIANGLE
+
+        glm::mat4 transform4;
+        float startTime4 = (float)glfwGetTime();
+
+        //Move U or D
+        if (startTime4 <= 2.0f) {
+            transform4 = glm::mat4();
+        }
+        else {
+            float moveUD = glm::min((startTime4 - 2.0f) * 0.1f, 0.085f);
+            transform4 = glm::translate(transform4, glm::vec3(0.0f, moveUD, 0.0f));
+        }
+
+        //Move L or R
+        if (startTime4 <= 2.0f) {
+            transform4 = glm::mat4();
+        }
+        else {
+            float moveLR = glm::min((startTime4 - 2.0f) * 0.1f, 0.5f);
+            transform4 = glm::translate(transform4, glm::vec3(-moveLR, 0.0f, 0.0f));
+        }
+
+        //Rotate
+        if (startTime4 <= 2.0f) {
+            transform4 = glm::mat4();
+        }
+        else {
+            float spinSpeed = 0.5f;
+            float angeldimaria = glm::radians(225.0f);
+            float angeldimaria2 = glm::min((startTime4 - 2.0f) * spinSpeed, angeldimaria);
+            transform4 = glm::rotate(transform4, angeldimaria2, glm::vec3(0.0f, 0.0f, 1.0f));
+        }
+
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform4));
+        glBindVertexArray(VAOs[4]);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
+
+
+
+
+
+
+
+        //FIRST RECTANGLE 
+
+        glm::mat4 transform5;
+        float startTime5 = (float)glfwGetTime();
+
+        //Move U or D
+        if (startTime5 <= 2.0f) {
+            transform5 = glm::mat4();
+        }
+        else {
+            float moveUD = glm::min((startTime5 - 2.0f) * 0.1f, 0.57f);
+            transform5 = glm::translate(transform5, glm::vec3(0.0f, moveUD, 0.0f));
+        }
+
+        //Move L or R
+        if (startTime5 <= 2.0f) {
+            transform5 = glm::mat4();
+        }
+        else {
+            float moveLR = glm::min((startTime5 - 2.0f) * 0.1f, 0.1f);
+            transform5 = glm::translate(transform5, glm::vec3(-moveLR, 0.0f, 0.0f));
+        }
+
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform5));
+        glBindVertexArray(VAOs[5]);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+
+
+
+
+
+
+
+
+        //SECOND RECTANGLE
+
+        glm::mat4 transform6;
+        float startTime6 = (float)glfwGetTime();
+
+        //Move U or D
+        if (startTime6 <= 2.0f) {
+            transform6 = glm::mat4();
+        }
+        else {
+            float moveUD = glm::min((startTime6 - 2.0f) * 0.05f, 0.3f);
+            transform6 = glm::translate(transform6, glm::vec3(0.0f, moveUD, 0.0f));
+        }
+
+        //Move L or R
+        if (startTime6 <= 2.0f) {
+            transform6 = glm::mat4();
+        }
+        else {
+            float moveLR = glm::min((startTime6 - 2.0f) * 0.05f, 0.38f);
+            transform6 = glm::translate(transform6, glm::vec3(moveLR, 0.0f, 0.0f));
+        }
+
+        //Rotate + Flip
+        if (startTime6 <= 2.0f) {
+            transform6 = glm::mat4();
+        }
+        else {
+            float spinSpeed = 0.2f;
+            float angeldimaria = glm::radians(35.0f);
+            float angeldimaria2 = glm::min((startTime6 - 2.0f) * spinSpeed, angeldimaria);
+            transform6 = glm::rotate(transform6, angeldimaria2, glm::vec3(0.0f, 0.0f, 1.0f));
+
+            transform6 = glm::scale(transform6, glm::vec3(-1.0f, 1.0f, 1.0f));
+        }
+
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform6));
+        glBindVertexArray(VAOs[6]);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+
+
+
+
+
+
+
+
+        /* Swap front and back buffers */
+        glfwSwapBuffers(window);
+
+        /* Poll for and process events */
+        glfwPollEvents();
+
+    }
+
+    // Properly de-allocate all resources once they've outlived their purpose 
+    glDeleteVertexArrays(2, VAOs);
+    glDeleteBuffers(2, VBOs);
+
+    glfwTerminate();
+    return 0;
+
+}
